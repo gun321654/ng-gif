@@ -7,33 +7,54 @@ import { promise } from 'protractor';
   providedIn: 'root'
 })
 export class GifService {
-  handler: any = {};
-  gifHead: any = {};
-  gifImg: Array<any> = [];
-  gifGCE: Array<any> = [];
-
   constructor() { }
   doParse(data) {
-    // console.log(data);
+    let gifHead = {};
+    let gifGCE = [];
+    let gifImg = [];
     return new Promise((resolve, reject) => {
-      this.handler = {
+      let handler = {
         hdr: (data) => {
-          this.gifHead = data
+          gifHead = data
         },
         gce: (data) => {
-          this.gifGCE.push(data);
+          gifGCE.push(data);
         },
         img: (data) => {
-          this.gifImg.push(data);
+          gifImg.push(data);
         },
         eof: (block) => {
-          resolve({ gifHead: this.gifHead, gifImg: this.gifImg, gifGCE: this.gifGCE })
+          resolve(toImage(gifHead, gifImg, gifGCE))
         }
       };
-      parseGIF(new Stream(data), this.handler);
-
-
+      parseGIF(new Stream(data), handler);
     })
   }
-
 }
+const toImage = (gifHead, gifImg, gifGCE) => {
+  let canvas = document.createElement("canvas");
+  let frame = canvas.getContext('2d');
+  return gifImg.map((item, i) => {
+    var ct = gifGCE[i].lctFlag ? item.lct : gifHead.gct;
+    var cData = frame.getImageData(item.leftPos, item.topPos, item.width, item.height);
+    let transparency = gifGCE[i].transparencyGiven ? gifGCE[i].transparencyIndex : null;
+    let disposalMethod = gifGCE[i].disposalMethod;
+    let lastDisposalMethod = disposalMethod;
+    item.pixels.forEach(function (pixel, i) {
+      if (transparency !== pixel) {
+        cData.data[i * 4 + 0] = ct[pixel][0];
+        cData.data[i * 4 + 1] = ct[pixel][1];
+        cData.data[i * 4 + 2] = ct[pixel][2];
+        cData.data[i * 4 + 3] = 255;
+      } else {
+        if (lastDisposalMethod === 2 || lastDisposalMethod === 3) {
+          cData.data[i * 4 + 3] = 0;
+        } else {
+        }
+      }
+    });
+    frame.putImageData(cData, item.leftPos, item.topPos);
+    return { delay: gifGCE[i].delayTime, url: canvas.toDataURL("image/png") };
+  });
+}
+

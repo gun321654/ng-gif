@@ -18,10 +18,13 @@
         <option value="10" label="10"></option>
     </datalist>
 
+    <img src="../../assets/1.jpg" alt="">
     <section>
         <ko-stage [config]="configStage">
             <ko-layer>
-                <ko-circle [config]="configCircle" (click)="handleClick($event)"></ko-circle>
+                <!-- <ko-circle [config]="configCircle" (click)="handleClick($event)"></ko-circle> -->
+                <ko-image [config]="configImg"></ko-image>
+                <!-- <ko-canvas></ko-canvas> -->
             </ko-layer>
         </ko-stage>
         <br>

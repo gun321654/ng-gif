@@ -57,6 +57,8 @@
 						console.log("frames[7].delay", frames[7].delay);
 						console.log('total time:' + (s * 10) + " milliseconds");
 						//第一张图片
+
+						console.log("frames[7].data", frames[7].data)
 						canvas.getContext('2d').putImageData(frames[7].data, 0, 0);
 						var img = document.getElementById("portrait");
 						img.width = hdr.width;
