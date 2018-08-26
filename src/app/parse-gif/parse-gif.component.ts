@@ -1,139 +1,114 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { GifService } from '../services/gif.service';
-
-import { BehaviorSubject, Observable, of, from, Subject, Subscription, timer, interval } from 'rxjs';
-import { map, filter, scan, delay, concatAll, concat } from 'rxjs/operators';
-
+import { BehaviorSubject, Observable, of, from, Subject, Subscription, timer, interval, combineLatest } from 'rxjs';
+import { map, filter, scan, delay, concatAll, concat, zip, startWith, throttleTime, take, switchAll, switchMap } from 'rxjs/operators';
 //concatAll  Observable 转 Iterable 
-
-from([1000, 5000, 2000, 6000]).pipe(
-  map(x => timer(x)),
-  concatAll()
-).subscribe(console.log);
 // timer(1000).subscribe(console.log)
-
-
 @Component({
   selector: 'app-parse-gif',
   templateUrl: './parse-gif.component.html',
   styleUrls: ['./parse-gif.component.css']
 })
-// 
 export class ParseGifComponent implements OnInit {
-  private data: string = "";
+  private images: Array<HTMLImageElement> = [];
+  private delays: Array<number> = [];
+  // private control: number = 0;
+
+  public configShowStage = new BehaviorSubject({});
+  public configEditStage = new BehaviorSubject({});
+  public configShow = new BehaviorSubject({});
+  public configEdit = new BehaviorSubject({});
+
+  // @ViewChild("control") private control: ElementRef;
+  // @ViewChild("show") private showImg: ElementRef;
+  // @ViewChild("edit") private editImg: ElementRef;
+
   private time: number = null;
   private play: boolean = false;
   private run: any = null;
 
 
-  @ViewChild("show") private showImg: ElementRef;
-  @ViewChild("edit") private editImg: ElementRef;
   public constructor(private elementRef: ElementRef, private GifService: GifService, ) {
-
-
   }
   ngOnInit() {
-    console.log(this.showImg.nativeElement);
-    console.log(this.editImg.nativeElement);
 
 
-    // this.imageObj.src = "../../assets/1.jpg";
-    let imageObj = new Image();
-    imageObj.onload = () => {
-      this.configImg = of({
-        x: 0,
-        y: 0,
-        image: imageObj,
-        width: 106,
-        height: 118,
-      })
-    }
-    imageObj.src = "../../assets/1.jpg";
+    // console.log(this.showImg.nativeElement);
+    // console.log(this.editImg.nativeElement);
   }
-  playSwitch() {
-    this.play = !this.play;
 
+
+  changeControl(e) {
+    // console.log(e);
+    const image = this.images[e];
+    this.configEdit.next({
+      x: 0,
+      y: 0,
+      width: image.width,
+      height: image.height,
+      fillPatternImage: image
+    });
   }
-  public configStage = new BehaviorSubject({
-    width: 200,
-    height: 200
-  });
-  public configCircle: Observable<any> = of({
-    x: 100,
-    y: 100,
-    radius: 70,
-    fill: 'red',
-    stroke: 'black',
-    strokeWidth: 4
-  });
-
-  public configImg: Observable<any>;
 
 
-  public handleClick(event: any) {
-    console.log('Hello Circle', event);
-  }
+
+  // "../../assets/1.jpg";
+
+
+
 
   changeFile(e) {
     const file = e.target.files[0];
     const fr = new FileReader();
     fr.readAsBinaryString(file);  //2
-    fr.onloadend = (e: any) => {
+    fr.onloadend = (e: FileReaderProgressEvent) => {
       //atob 编码   btoa 解码
-      //gif  
-      this.data = "data:image/gif;base64," + window.btoa(e.target.result);
+      // this.data = "data:image/gif;base64," + window.btoa(e.target.result);
       // console.log(this.data);
-      this.GifService.doParse(e.target.result).then(this.toImg)
+      this.GifService.doParse(e.target.result)
+        .then((data: { delays: Array<number>, images: Array<HTMLImageElement>, gifHead: any }) => {
+          this.delays = data.delays;
+          this.images = data.images;
+
+          const { width, height } = data.gifHead;
+          this.configShowStage.next({
+            width: width,
+            height: height
+          });
+          this.configEditStage.next({
+            width: width,
+            height: height
+          });
+          this.changeControl(0);
+          // let height 
+
+
+          let delays = data.delays;
+          let images = data.images;
+          const time = from(delays).pipe(
+            startWith(0),
+            map(x => timer(x === 0 ? 100 : x * 10)),
+            concatAll()
+          );
+          let clear = from(images).pipe(
+            zip(time, data1 => data1)
+          );
+          let run = clear.subscribe({
+            next: (image: HTMLImageElement) => {
+              this.configShow.next({
+                x: 0,
+                y: 0,
+                width: image.width,
+                height: image.height,
+                fillPatternImage: image
+              });
+            },
+            error: (err) => { console.log('Error: ' + err); },
+            complete: () => { console.log('complete'); }
+          });
+        })
     }
   }
-
-  toImg = (imgData) => {
-    console.log(imgData);
-
-
-  }
-  transfromCancas = (img, gce) => {
-
-  }
-}
-
-const showImage = (img, canvas) => {
-  let frame = canvas.getContext('2d');
-  let i = 0;
-  let delay = 0;
-  const doFrame = () => {
-    setTimeout(() => {
-      delay = img.gifGCE[i].delayTime * 10 || 100;
-      console.log("delay", delay);
-
-      var ct = img.gifGCE[i].lctFlag ? img.gifImg[i].lct : img.gifHead.gct;
-      var cData = frame.getImageData(img.gifImg[i].leftPos, img.gifImg[i].topPos, img.gifImg[i].width, img.gifImg[i].height);
-      let transparency = img.gifGCE[i].transparencyGiven ? img.gifGCE[i].transparencyIndex : null;
-      let disposalMethod = img.gifGCE[i].disposalMethod;
-      let lastDisposalMethod = disposalMethod;
-      img.gifImg[i].pixels.forEach(function (pixel, i) {
-        if (transparency !== pixel) {
-          cData.data[i * 4 + 0] = ct[pixel][0];
-          cData.data[i * 4 + 1] = ct[pixel][1];
-          cData.data[i * 4 + 2] = ct[pixel][2];
-          cData.data[i * 4 + 3] = 255;
-        } else {
-          if (lastDisposalMethod === 2 || lastDisposalMethod === 3) {
-            cData.data[i * 4 + 3] = 0;
-          } else {
-          }
-        }
-      });
-      frame.putImageData(cData, img.gifImg[i].leftPos, img.gifImg[i].topPos);
-      i++;
-      if (img.gifGCE[i]) { doFrame(); }
-      // else {
-      //   i = 0;
-      //   doFrame();
-      // }
-    }, delay);
-  }
-  doFrame();
 }
 
 
@@ -151,6 +126,37 @@ class Demo {
 }
 
 
+
+
+
+
+
+
+
+
+
+// const data$ = from([3000, 5000, 2000])
+//   .pipe(
+//     map(x => timer(x)),
+//     startWith('a'),
+//     concatAll(),
+// );
+// const control$ = new Subject();
+
+// const main$ = combineLatest(
+//   data$,
+//   control$,
+// );
+
+
+// const handler = main$.subscribe(v => console.log(v));
+
+// control$.next({ pause: false });
+
+// // 某个时间
+// setTimeout(() => {
+//   control$.next({ pause: true });
+// }, 5000);
 
 
 // const pow = (p: number) =>

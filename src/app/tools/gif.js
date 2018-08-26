@@ -315,6 +315,7 @@ var parseGIF = function (st, handler) {  //解析gif
     img.topPos = st.readUnsigned();
     img.width = st.readUnsigned();
     img.height = st.readUnsigned();
+    // console.log()
 
     var bits = byteToBitArr(st.readByte());
     img.lctFlag = bits.shift();

@@ -1,33 +1,26 @@
 <input type="file" (change)="changeFile($event)">
-<canvas #show height="450"></canvas>
-<canvas #edit height="450"></canvas>
+
 <div>
-    <input type="range" list="tickmarks" min="0" max="10" step="1">
-
+    <input (input)="changeControl($event.target.value)" type="range" list="tickmarks" min="0" max="{{images.length-1}}" step="1">
     <datalist id="tickmarks">
-        <option value="0" label="0"></option>
-        <option value="1"></option>
-        <option value="2"></option>
-        <option value="3"></option>
-        <option value="4"></option>
-        <option value="5" label="5"></option>
-        <option value="6"></option>
-        <option value="7"></option>
-        <option value="8"></option>
-        <option value="9"></option>
-        <option value="10" label="10"></option>
+        <option *ngFor="let item of images; let i = index" value="{{i}}" label="{{i}}"></option>
     </datalist>
-
-    <img src="../../assets/1.jpg" alt="">
+    <!-- <img src="../../assets/1.jpg" alt=""> -->
     <section>
-        <ko-stage [config]="configStage">
+        <ko-stage [config]="configShowStage">
             <ko-layer>
-                <!-- <ko-circle [config]="configCircle" (click)="handleClick($event)"></ko-circle> -->
-                <ko-image [config]="configImg"></ko-image>
-                <!-- <ko-canvas></ko-canvas> -->
+                <ko-rect [config]="configShow"></ko-rect>
             </ko-layer>
+
         </ko-stage>
         <br>
+        <ko-stage [config]="configEditStage">
+            <ko-layer>
+                <ko-rect [config]="configEdit"></ko-rect>
+            </ko-layer>
+        </ko-stage>
+
+
     </section>
 
 </div>

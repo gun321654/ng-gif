@@ -32,9 +32,14 @@ export class GifService {
   }
 }
 const toImage = (gifHead, gifImg, gifGCE) => {
+  console.log("gifHead", gifHead);
+  console.log("gifImg", gifImg);
+  console.log("gifGCE", gifGCE);
   let canvas = document.createElement("canvas");
   let frame = canvas.getContext('2d');
-  return gifImg.map((item, i) => {
+  canvas.height = gifHead.height;
+  canvas.width = gifHead.width;
+  const images = gifImg.map((item, i) => {
     var ct = gifGCE[i].lctFlag ? item.lct : gifHead.gct;
     var cData = frame.getImageData(item.leftPos, item.topPos, item.width, item.height);
     let transparency = gifGCE[i].transparencyGiven ? gifGCE[i].transparencyIndex : null;
@@ -54,7 +59,19 @@ const toImage = (gifHead, gifImg, gifGCE) => {
       }
     });
     frame.putImageData(cData, item.leftPos, item.topPos);
-    return { delay: gifGCE[i].delayTime, url: canvas.toDataURL("image/png") };
+    let image = new Image();
+    image.src = canvas.toDataURL("image/jpg");
+    image.height = gifHead.height;
+    image.width = gifHead.width;
+    return image;
   });
+
+  const delays = gifGCE.map((item, i) => {
+    return item.delayTime
+  })
+
+
+  return { delays: delays, images: images, gifHead: gifHead }
+
 }
 
