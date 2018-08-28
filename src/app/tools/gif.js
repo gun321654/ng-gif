@@ -177,16 +177,24 @@ var parseGIF = function (st, handler) {  //解析gif
     var bits = byteToBitArr(st.readByte());   //读取1字节
     // pos  = 11
     hdr.gctFlag = bits.shift();
+
+    //gctFlag global color table flag  全局颜色列表标志
+
     hdr.colorRes = bitsToNum(bits.splice(0, 3));
     hdr.sorted = bits.shift();
     hdr.gctSize = bitsToNum(bits.splice(0, 3));
-
+    // 全局颜色列表大小,gctSize+1确定颜色列表的索引数(2^(gctSize+1)); 
     // console.log("hdr.gctSize", hdr.gctSize)
 
     hdr.bgColor = st.readByte();
+    //背景颜色:背景颜色在全局颜色列表中的索引(PS:是索引而不是RGB值,所以如果没有全局颜色列表时,该值没有意义); 
+
     hdr.pixelAspectRatio = st.readByte(); // if not 0, aspectRatio = (pixelAspectRatio + 15) / 64
 
+
     if (hdr.gctFlag) {
+      console.log("size",hdr.gctSize);
+      //gctFlag  为true 时，具有全局颜色列表
       hdr.gct = parseCT(1 << (hdr.gctSize + 1));
     }
     handler.hdr && handler.hdr(hdr);
@@ -319,12 +327,15 @@ var parseGIF = function (st, handler) {  //解析gif
 
     var bits = byteToBitArr(st.readByte());
     img.lctFlag = bits.shift();
+    // lctFlag  local color table flag 局部颜色列表
+
     img.interlaced = bits.shift();
     img.sorted = bits.shift();
     img.reserved = bits.splice(0, 2);
     img.lctSize = bitsToNum(bits.splice(0, 3));
-
+    //确定颜色列表的索引数(2^(lctSize+1))
     if (img.lctFlag) {
+      // 当lctFlag 为true 时  具备局部颜色列表并且使用局部颜色列表作为当前帧色板
       img.lct = parseCT(1 << (img.lctSize + 1));
     }
 

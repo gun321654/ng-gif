@@ -57,6 +57,8 @@ var playGIF = (function () {
     if (!frame) frame = tmpCanvas.getContext('2d');
     var ct = img.lctFlag ? img.lct : hdr.gct; // TODO: What if neither exists?
     var cData = frame.getImageData(img.leftPos, img.topPos, img.width, img.height);
+    console.log("cdata", cData);
+
     img.pixels.forEach(function (pixel, i) {
       // cData.data === [R,G,B,A,...]
       if (transparency !== pixel) { // This includes null, if no transparency was defined.
@@ -66,9 +68,11 @@ var playGIF = (function () {
         cData.data[i * 4 + 3] = 255; // Opaque.
       } else {
         if (lastDisposalMethod === 2 || lastDisposalMethod === 3) {
+          console.log("透明");
           cData.data[i * 4 + 3] = 0; // Transparent.
           // XXX: This is very very wrong.
         } else {
+
         }
       }
     });

@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { GifService } from '../services/gif.service';
 import { BehaviorSubject, Observable, of, from, Subject, Subscription, timer, interval, combineLatest } from 'rxjs';
 import { map, filter, scan, delay, concatAll, concat, zip, startWith, throttleTime, take, switchAll, switchMap } from 'rxjs/operators';
+import { KonvaComponent } from 'ng2-konva'
 //concatAll  Observable 转 Iterable 
 // timer(1000).subscribe(console.log)
 @Component({
@@ -12,6 +13,7 @@ import { map, filter, scan, delay, concatAll, concat, zip, startWith, throttleTi
 export class ParseGifComponent implements OnInit {
   private images: Array<HTMLImageElement> = [];
   private delays: Array<number> = [];
+  private gct: Array<string> = [];
   // private control: number = 0;
 
   public configShowStage = new BehaviorSubject({});
@@ -20,19 +22,17 @@ export class ParseGifComponent implements OnInit {
   public configEdit = new BehaviorSubject({});
 
   // @ViewChild("control") private control: ElementRef;
-  // @ViewChild("show") private showImg: ElementRef;
+  @ViewChild("show") private show: KonvaComponent;
   // @ViewChild("edit") private editImg: ElementRef;
 
   private time: number = null;
   private play: boolean = false;
   private run: any = null;
 
-
   public constructor(private elementRef: ElementRef, private GifService: GifService, ) {
+
   }
   ngOnInit() {
-
-
     // console.log(this.showImg.nativeElement);
     // console.log(this.editImg.nativeElement);
   }
@@ -41,6 +41,7 @@ export class ParseGifComponent implements OnInit {
   changeControl(e) {
     // console.log(e);
     const image = this.images[e];
+
     this.configEdit.next({
       x: 0,
       y: 0,
@@ -48,23 +49,38 @@ export class ParseGifComponent implements OnInit {
       height: image.height,
       fillPatternImage: image
     });
+
+    setTimeout(() => {
+      const imgData = this.show.getStage().toCanvas().getContext("2d").getImageData(0, 0, image.width, image.height).data;
+      console.log("imgData", imgData);
+      console.time();
+      var result = [];
+      for (var i = 0; i < imgData.length; i += 4) {
+        // if(imgData[i+4]===0){console.log("透明")}
+        result.push(colorRGB2Hex2(imgData.slice(i, i + 3)));
+      }
+      console.log(result);
+      result.forEach(item => {
+        let repeat = this.gct.findIndex(arritem => item === arritem);
+        if (repeat === -1) {
+          this.gct.push(item);
+        }
+      });
+      console.log(this.gct);
+      console.timeEnd();
+    }, 0);
+
   }
-
-
-
   // "../../assets/1.jpg";
-
-
-
-
   changeFile(e) {
     const file = e.target.files[0];
     const fr = new FileReader();
     fr.readAsBinaryString(file);  //2
-    fr.onloadend = (e: FileReaderProgressEvent) => {
+    fr.onloadend = (e: any) => {
       //atob 编码   btoa 解码
       // this.data = "data:image/gif;base64," + window.btoa(e.target.result);
       // console.log(this.data);
+      console.log("file input", e);
       this.GifService.doParse(e.target.result)
         .then((data: { delays: Array<number>, images: Array<HTMLImageElement>, gifHead: any }) => {
           this.delays = data.delays;
@@ -80,8 +96,6 @@ export class ParseGifComponent implements OnInit {
             height: height
           });
           this.changeControl(0);
-          // let height 
-
 
           let delays = data.delays;
           let images = data.images;
@@ -118,6 +132,11 @@ class Demo {
   constructor() {
     this.emitter = new Subject<any>();
     this.handler = this.emitter.subscribe(this.executor);
+    const asd = new Subject<any>();
+    const qwe = asd.subscribe();
+    const zxc = qwe.unsubscribe();
+
+
   }
 
   executor(v: any) {
@@ -127,7 +146,14 @@ class Demo {
 
 
 
-
+function colorRGB2Hex(color) {
+  var hex = ((1 << 24) + (color[0] << 16) + (color[1] << 8) + color[2]).toString(16);
+  return hex;
+}
+function colorRGB2Hex2(color) {
+  var hex = 1000000000 + (color[0] * 1000000) + color[1] * 1000 + color[2];
+  return hex;
+}
 
 
 

@@ -40,7 +40,8 @@ const toImage = (gifHead, gifImg, gifGCE) => {
   canvas.height = gifHead.height;
   canvas.width = gifHead.width;
   const images = gifImg.map((item, i) => {
-    var ct = gifGCE[i].lctFlag ? item.lct : gifHead.gct;
+    var ct = item.lctFlag ? item.lct : gifHead.gct;
+    //lctFlag 值为否时使用全局颜色列表  值为是时使用自己颜色列表
     var cData = frame.getImageData(item.leftPos, item.topPos, item.width, item.height);
     let transparency = gifGCE[i].transparencyGiven ? gifGCE[i].transparencyIndex : null;
     let disposalMethod = gifGCE[i].disposalMethod;
@@ -55,6 +56,7 @@ const toImage = (gifHead, gifImg, gifGCE) => {
         if (lastDisposalMethod === 2 || lastDisposalMethod === 3) {
           cData.data[i * 4 + 3] = 0;
         } else {
+
         }
       }
     });

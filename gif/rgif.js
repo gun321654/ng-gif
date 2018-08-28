@@ -38,7 +38,7 @@ var playGIF = (function () {
     tmpCanvas.height = hdr.height;
   };
 
-  var doGCE = function (gce) { 
+  var doGCE = function (gce) {
     transparency = gce.transparencyGiven ? gce.transparencyIndex : null;
     delay = gce.delayTime;
     disposalMethod = gce.disposalMethod;
@@ -47,7 +47,7 @@ var playGIF = (function () {
   };
 
   var pushFrame = function () {
-    console.log("delay",delay)
+    console.log("delay", delay)
     if (!frame) return;
     frames.push({
       data: frame.getImageData(0, 0, hdr.width, hdr.height),
@@ -62,7 +62,7 @@ var playGIF = (function () {
     var ct = img.lctFlag ? img.lct : hdr.gct; // TODO: What if neither exists?
 
     var cData = frame.getImageData(img.leftPos, img.topPos, img.width, img.height);
-
+    console.log("cdata", cData);
     img.pixels.forEach(function (pixel, i) {
       // cData.data === [R,G,B,A,...]
       if (transparency !== pixel) { // This includes null, if no transparency was defined.
@@ -73,9 +73,10 @@ var playGIF = (function () {
       } else {
 
         if (lastDisposalMethod === 2 || lastDisposalMethod === 3) {
-          cData.data[i * 4 + 3] = 0; // Transparent.
+       
           // XXX: This is very very wrong.
         } else {
+          cData.data[i * 4 + 3] = 0; // Transparent.
         }
       }
     });
